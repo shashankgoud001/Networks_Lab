@@ -1,0 +1,109 @@
+######################################## Data Structures and Description ########################################
+
+* Message
+- This is the basic data structure for the message. This is the data stored in the Message tables for send and receive.
+- This contains 3 files:
+    1. message -> The actual message to be sent/receive
+    2. len -> The length of the message
+    3. flags -> The flags for the message
+
+* pthread_mutex_lock
+This is used for mutual exclusion of 2 processes. This is used between the my_send and send_message_S which is the send thread functionality and other lock for the receive thread functionality and my_recv.
+
+
+
+
+######################################## Functions and Description ########################################
+
+** All the mentioned functions take the same arguments as the original functions in the socket library.
+
+* my_socket
+Arguments:
+    1. domain -> The domain of the socket
+    2. type -> The type of the socket
+    3. protocol -> The protocol of the socket
+-> Here the only accepted type is "SOCK_MyTCP".
+Description:
+-> This function creates a new socket and returns the socket descriptor. This also creates 2 threads for managing the send and receive functionalities and creates the buffers for the send and receive messages.
+
+* my_bind
+Arguments:
+    1. sockfd -> The socket descriptor
+    2. addr -> The address to bind to
+    3. addrlen -> The length of the address
+*Description:
+-> This function binds the socket to the address specified in the arguments.
+
+* my_listen
+Arguments:
+    1. sockfd -> The socket descriptor
+    2. backlog -> The maximum number of pending connections
+Description:
+-> This function puts the socket in the listening state. This is used by the server to listen for incoming connections.
+
+* my_accept
+Arguments:
+    1. sockfd -> The socket descriptor
+    2. addr -> The address to bind to
+    3. addrlen -> The length of the address
+Description:
+-> This function accepts the incoming connection and returns the socket descriptor for the new connection. This also changes the new socket descriptor from -1 so that the thread can start sending and receiving messages on this sockfd.
+
+* my_connect
+Arguments:
+    1. sockfd -> The socket descriptor
+    2. addr -> The address to bind to
+    3. addrlen -> The length of the address
+Description:
+-> This function connects the socket to the address specified in the arguments. This also changes the socket descriptor from -1 so that the thread can start sending and receiving messages on this sockfd.
+
+* my_send
+Arguments:
+    1. sockfd -> The socket descriptor
+    2. buf -> The buffer to send
+    3. len -> The length of the buffer
+    4. flags -> The flags for the message
+Description:
+-> This function puts the message in the send message buffer table by acquiring the lock for it and then returns returns the number of bytes put in the table. This waits if there is no space in the send message buffer table, i.e., if the send counter is 10. The thread that is responsible for sending messages sleeps for T seconds. After it wakes up, it locks the table and then checks the send counter which represents the number messages in the send message table, to be sent. If the send counter is greater than 0, then the messages are sent to the specified sockfd using the attribute in the message data structure and the send counter is decremented by the number of messages sent and then unlocks the send message table so that my_send can put the new messages in it. If the send counter is 0, it goes to sleep again.
+
+* my_recv
+Arguments:
+    1. sockfd -> The socket descriptor
+    2. buf -> The buffer to receive
+    3. len -> The length of the buffer
+    4. flags -> The flags for the message
+Description:
+-> The function gets the message from the receive message table by acquiring lock for it and then returns the number of messages received. This first locks the receive message table and keeps checking the receive message counter periodically for every 1 second by unlocking table before sleep and locking it again after the sleep. If the receive message counter is greater than 0, then it copies the message from the receive message table to the buffer specified in the arguments and decrements the receive message counter by 1. If the receive message counter is 0, it again keeps checking the counter. The thread responsible for receiving the messages first waits until the connection (for client) / accept (for server) call is made. After that, it first receives sees the header which contains the length of the message to be received, then it locks the table and fills the receive message table with the messages received and increments the receive message counter by the number of message received and then unlocks the table so that my_recv can get the messages from the table. 
+
+* my_close
+Arguments:
+    1. sockfd -> The socket descriptor
+Description:
+-> This initally waits for 5 seconds for the connected to socket to complete all the pending send and receive requests to be completed. After this, if the sockfd (the argument) is same as the sockfd created at my_socket call, then the threads are terminated, the buffers are freed and the then the socket is closed and the value is returned. Otherwise, the socket is just closed and the value is returned.
+
+
+
+
+
+######################################## Usage ########################################
+
+1. Dowload the zip file and extract it. Then, go to the directory and run the make file to create the library.
+2. Then, put the mysocket.h in the server and client files and use the appropriate functions for the required functionalities as mentioned above. The sever and client files must be in the same directory as the library file (libmsocket.a) is.
+3. Then, compile the server and client files using the following command:
+    gcc -o server server.c -L. -lmsocket -lpthread
+    gcc -o client client.c -L. -lmsocket -lpthread
+4. Then, run the server and client files in different terminals.
+5. The server should be run first and then the client.
+6. Hurray! You are done with the implementation of the MyTCP protocol.
+
+
+
+######################################## Happy Coding ########################################
+
+**      **  ********  ******   ******   **    **     ******  ******  ******   ****** **    **  ******
+**      **  **    **  **    ** **    ** **    **    **      **    ** **    **   **   ***   ** **      
+**      **  **    **  **    ** **    ** **    **    **      **    ** **    **   **   ****  ** **      
+**********  ********  ******   ******    ******     **      **    ** **    **   **   ** ** ** **  ****
+**      **  **    **  **       **          **       **      **    ** **    **   **   **  **** **    **
+**      **  **    **  **       **          **       **      **    ** **    **   **   **   *** **    **
+**      **  **    **  **       **          **        ******  ******  ******   ****** **    **  ****** 
